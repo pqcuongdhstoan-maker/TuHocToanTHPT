@@ -15,10 +15,13 @@ import {
   ShieldCheck,
   School,
   FileText,
+  LineChart,
+  Trophy,
+  Flame,
 } from 'lucide-react';
 import { User } from '../types';
 
-export type ActiveTab = 'home' | 'practice' | 'mock_exam' | 'ai_tutor' | 'stats' | 'admin';
+export type ActiveTab = 'home' | 'practice' | 'mock_exam' | 'graph' | 'arena' | 'ai_tutor' | 'stats' | 'admin';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -26,9 +29,10 @@ interface SidebarProps {
   currentUser: User | null;
   onOpenAuth: () => void;
   onLogout: () => void;
-  onSwitchDemoUser: (role: 'teacher' | 'student') => void;
+  onSwitchDemoUser?: (role: 'teacher' | 'student') => void;
   onOpenImportModal: () => void;
-  mobileOpen: boolean;
+  isMobileOpen?: boolean;
+  mobileOpen?: boolean;
   onCloseMobile: () => void;
 }
 
@@ -40,9 +44,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onLogout,
   onSwitchDemoUser,
   onOpenImportModal,
+  isMobileOpen,
   mobileOpen,
   onCloseMobile,
 }) => {
+  const isMobile = isMobileOpen ?? mobileOpen ?? false;
   const isTeacherOrAdmin = currentUser?.role === 'admin' || currentUser?.role === 'teacher';
 
   const menuItems = [
@@ -57,6 +63,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'LUYỆN TẬP',
       icon: BookOpen,
       iconColor: 'text-blue-600',
+    },
+    {
+      id: 'graph' as ActiveTab,
+      label: 'ĐỒ THỊ HÀM SỐ',
+      icon: LineChart,
+      iconColor: 'text-emerald-500',
+      badge: 'D3',
+    },
+    {
+      id: 'arena' as ActiveTab,
+      label: 'ĐẤU TRƯỜNG 60S',
+      icon: Trophy,
+      iconColor: 'text-amber-500',
+      badge: 'Game',
     },
     {
       id: 'mock_exam' as ActiveTab,
@@ -97,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Mobile backdrop */}
-      {mobileOpen && (
+      {isMobile && (
         <div
           onClick={onCloseMobile}
           className="fixed inset-0 bg-slate-900/40 z-40 lg:hidden backdrop-blur-xs transition-opacity"
@@ -107,7 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar container */}
       <aside
         className={`fixed top-0 left-0 bottom-0 z-50 w-72 bg-white border-r border-slate-100 flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
-          mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+          isMobile ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         }`}
       >
         {/* Top Branding Section */}
@@ -264,7 +284,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="grid grid-cols-2 gap-1">
               <button
                 type="button"
-                onClick={() => onSwitchDemoUser('student')}
+                onClick={() => onSwitchDemoUser?.('student')}
                 className={`px-2 py-1.5 rounded-lg text-xs font-medium text-center transition ${
                   currentUser?.role === 'student'
                     ? 'bg-blue-600 text-white shadow-xs font-bold'
@@ -275,7 +295,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => onSwitchDemoUser('teacher')}
+                onClick={() => onSwitchDemoUser?.('teacher')}
                 className={`px-2 py-1.5 rounded-lg text-xs font-medium text-center transition ${
                   isTeacherOrAdmin
                     ? 'bg-blue-600 text-white shadow-xs font-bold'

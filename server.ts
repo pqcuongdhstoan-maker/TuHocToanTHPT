@@ -580,6 +580,12 @@ app.post('/api/ai/explain', async (req, res) => {
 });
 
 // 7. STATISTICS
+app.get('/api/stats/submissions', (req, res) => {
+  const userId = req.query.userId as string;
+  const submissions = db.getSubmissions(userId ? { userId } : undefined);
+  res.json({ submissions });
+});
+
 app.get('/api/stats/student', (req, res) => {
   const userId = req.query.userId as string;
   const submissions = db.getSubmissions({ userId });

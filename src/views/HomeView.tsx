@@ -13,6 +13,8 @@ import {
   ChevronRight,
   FileEdit,
   ShieldCheck,
+  Zap,
+  LineChart,
 } from 'lucide-react';
 import { GradeLevel, User } from '../types';
 import MathView from '../components/MathView';
@@ -25,6 +27,7 @@ interface HomeViewProps {
   onStartExam: (examId: string) => void;
   onOpenImportModal: () => void;
   onOpenAuth: () => void;
+  onOpenArena?: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -35,6 +38,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onStartExam,
   onOpenImportModal,
   onOpenAuth,
+  onOpenArena,
 }) => {
   // Interactive quiz card state (Matching exact quiz in Image 5)
   const [selectedQuizOption, setSelectedQuizOption] = useState<string>('B');
@@ -297,6 +301,80 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm trung bình</span>
             <div className="text-xl font-extrabold text-slate-900">8.4 / 10.0</div>
             <span className="text-[10px] text-indigo-600 font-semibold">Tự tin chinh phục điểm 9+</span>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 4.5: INTERACTIVE FEATURES (ARENA 60S & D3 GRAPH PLOTTER) */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-blue-600">ĐỘC QUYỀN BEEDEMY</span>
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Học Tương Tác & Luyện Phản Xạ</h3>
+          </div>
+          <span className="text-xs text-slate-400 font-medium hidden sm:inline">Trực quan hóa D3 & Gamification 60s</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Card 1: Math Arena 60s */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-rose-500/10 border-2 border-amber-200/80 rounded-3xl p-6 sm:p-7 flex flex-col justify-between space-y-5 hover:border-amber-400 transition-all hover:shadow-lg group">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-extrabold">
+                  <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                  SPEED MATH 60 GIÂY
+                </span>
+                <span className="text-[11px] font-bold text-slate-500">Combo x1.5 • Streak</span>
+              </div>
+              <h4 className="text-lg sm:text-xl font-black text-slate-900 group-hover:text-amber-700 transition">
+                Đấu Trường Toán Học 60s
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Rèn phản xạ tính nhẩm siêu tốc và ghi nhớ công thức lượng giác, đạo hàm, tích phân, tọa độ Oxyz. Chinh phục bảng xếp hạng điểm cao!
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  if (onOpenArena) onOpenArena();
+                  else onNavigateTab('arena');
+                }}
+                className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-xs uppercase tracking-wider rounded-2xl shadow-md shadow-amber-500/20 transition flex items-center justify-center gap-2"
+              >
+                <Zap className="w-4 h-4 fill-white" />
+                <span>VÀO ĐẤU TRƯỜNG NGAY ⚡</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: D3 Graph Plotter */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-cyan-500/10 border-2 border-blue-200/80 rounded-3xl p-6 sm:p-7 flex flex-col justify-between space-y-5 hover:border-blue-400 transition-all hover:shadow-lg group">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-[11px] font-extrabold">
+                  <LineChart className="w-3.5 h-3.5 text-blue-600" />
+                  D3.JS VISUALIZATION
+                </span>
+                <span className="text-[11px] font-bold text-slate-500">Lớp 10 & 12</span>
+              </div>
+              <h4 className="text-lg sm:text-xl font-black text-slate-900 group-hover:text-blue-700 transition">
+                Khảo Sát Đồ Thị Tương Tác
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Kéo thanh trượt tham số để quan sát tức thời sự biến thiên của Parabol bậc 2, Đồ thị bậc 3, Tiệm cận đứng/ngang và Tiếp tuyến chuyển động.
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => onNavigateTab('graph')}
+                className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-2xl shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2"
+              >
+                <LineChart className="w-4 h-4" />
+                <span>KHÁM PHÁ ĐỒ THỊ D3 📊</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

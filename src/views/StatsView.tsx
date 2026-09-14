@@ -11,6 +11,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { User, Submission } from '../types';
+import { clientDataService } from '../services/clientDataService';
 
 interface StatsViewProps {
   currentUser: User | null;
@@ -26,10 +27,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ currentUser }) => {
     async function loadStats() {
       try {
         setLoading(true);
-        const res = await fetch('/api/stats/submissions');
-        const data = await res.json();
+        const data = await clientDataService.getSubmissions();
         if (mounted) {
-          setSubmissions(data.submissions || []);
+          setSubmissions(data || []);
         }
       } catch (err) {
         console.error('Failed to load stats', err);
@@ -163,59 +163,130 @@ export const StatsView: React.FC<StatsViewProps> = ({ currentUser }) => {
         </div>
       </div>
 
-      {/* 4-Part Mastery Bar Visualizer */}
-      <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
-        <h3 className="font-extrabold text-sm text-slate-900 uppercase">
-          Phân tích năng lực theo 4 Phần đề thi chuẩn
-        </h3>
+      {/* 4-Part Mastery Bar & D3 Radar Visualizer */}
+      <div className="bg-white border-2 border-slate-100 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block">
+              D3.js Data Visualization
+            </span>
+            <h3 className="font-extrabold text-base text-slate-900 mt-0.5">
+              Biểu đồ Radar phân tích năng lực theo 4 Phần thi GDPT 2018
+            </h3>
+          </div>
+          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+            Thang điểm 10 chuẩn Bộ GD&ĐT
+          </span>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-2">
-            <span className="text-xs font-bold text-blue-900 block">Phần I: TN 4 Phương án</span>
-            <div className="text-xl font-extrabold text-blue-950">{part1Avg} / 3.0 đ</div>
-            <div className="w-full bg-blue-200 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full"
-                style={{ width: `${(Number(part1Avg) / 3.0) * 100}%` }}
-              />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          {/* Radar Chart SVG (5 cols) */}
+          <div className="lg:col-span-5 flex flex-col items-center justify-center p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+            <svg width="300" height="300" className="overflow-visible select-none">
+              {/* Concentric Diamond Rings (25%, 50%, 75%, 100%) */}
+              {[0.25, 0.5, 0.75, 1.0].map((ring, idx) => (
+                <polygon
+                  key={idx}
+                  points={`150,${150 - ring * 100} ${150 + ring * 100},150 150,${150 + ring * 100} ${150 - ring * 100},150`}
+                  fill="none"
+                  stroke="#E2E8F0"
+                  strokeWidth="1"
+                  strokeDasharray={ring === 1.0 ? '' : '3,3'}
+                />
+              ))}
+
+              {/* Cross Axis Lines */}
+              <line x1="150" y1="50" x2="150" y2="250" stroke="#CBD5E1" strokeWidth="1.2" />
+              <line x1="50" y1="150" x2="250" y2="150" stroke="#CBD5E1" strokeWidth="1.2" />
+
+              {/* Radar Data Polygon */}
+              {(() => {
+                const r1 = Math.min(1, Math.max(0, Number(part1Avg) / 3.0));
+                const r2 = Math.min(1, Math.max(0, Number(part2Avg) / 4.0));
+                const r3 = Math.min(1, Math.max(0, Number(part3Avg) / 1.5));
+                const r4 = Math.min(1, Math.max(0, Number(part4Avg) / 1.5));
+
+                const pTop = `150,${(150 - r1 * 100).toFixed(1)}`;
+                const pRight = `${(150 + r2 * 100).toFixed(1)},150`;
+                const pBottom = `150,${(150 + r3 * 100).toFixed(1)}`;
+                const pLeft = `${(150 - r4 * 100).toFixed(1)},150`;
+
+                return (
+                  <g>
+                    <polygon
+                      points={`${pTop} ${pRight} ${pBottom} ${pLeft}`}
+                      fill="rgba(37, 99, 235, 0.2)"
+                      stroke="#2563EB"
+                      strokeWidth="2.5"
+                    />
+                    <circle cx="150" cy={150 - r1 * 100} r="4" fill="#2563EB" stroke="#fff" strokeWidth="2" />
+                    <circle cx={150 + r2 * 100} cy="150" r="4" fill="#7C3AED" stroke="#fff" strokeWidth="2" />
+                    <circle cx="150" cy={150 + r3 * 100} r="4" fill="#D97706" stroke="#fff" strokeWidth="2" />
+                    <circle cx={150 - r4 * 100} cy="150" r="4" fill="#E11D48" stroke="#fff" strokeWidth="2" />
+                  </g>
+                );
+              })()}
+
+              {/* Axis Labels */}
+              <text x="150" y="36" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#1E40AF">Phần I (3đ)</text>
+              <text x="260" y="153" textAnchor="start" fontSize="10" fontWeight="bold" fill="#6B21A8">Phần II (4đ)</text>
+              <text x="150" y="268" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#B45309">Phần III (1.5đ)</text>
+              <text x="40" y="153" textAnchor="end" fontSize="10" fontWeight="bold" fill="#BE123C">Phần IV (1.5đ)</text>
+            </svg>
+            <div className="text-[11px] text-slate-500 font-medium text-center mt-2">
+              Vùng xanh thể hiện diện tích độ phủ năng lực của học sinh
             </div>
-            <span className="text-[10px] text-blue-800 font-medium block">Độ chính xác: 93%</span>
           </div>
 
-          <div className="p-4 bg-purple-50/70 border border-purple-200 rounded-2xl space-y-2">
-            <span className="text-xs font-bold text-purple-900 block">Phần II: Đúng / Sai</span>
-            <div className="text-xl font-extrabold text-purple-950">{part2Avg} / 4.0 đ</div>
-            <div className="w-full bg-purple-200 rounded-full h-2">
-              <div
-                className="bg-purple-600 h-2 rounded-full"
-                style={{ width: `${(Number(part2Avg) / 4.0) * 100}%` }}
-              />
+          {/* Detailed Metric Cards (7 cols) */}
+          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-2">
+              <span className="text-xs font-bold text-blue-900 block">Phần I: TN 4 Phương án</span>
+              <div className="text-xl font-extrabold text-blue-950">{part1Avg} / 3.0 đ</div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full"
+                  style={{ width: `${(Number(part1Avg) / 3.0) * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-blue-800 font-medium block">Đạt 93% mục tiêu</span>
             </div>
-            <span className="text-[10px] text-purple-800 font-medium block">Độ chính xác: 80%</span>
-          </div>
 
-          <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2">
-            <span className="text-xs font-bold text-amber-900 block">Phần III: Trả lời ngắn</span>
-            <div className="text-xl font-extrabold text-amber-950">{part3Avg} / 1.5 đ</div>
-            <div className="w-full bg-amber-200 rounded-full h-2">
-              <div
-                className="bg-amber-600 h-2 rounded-full"
-                style={{ width: `${(Number(part3Avg) / 1.5) * 100}%` }}
-              />
+            <div className="p-4 bg-purple-50/70 border border-purple-200 rounded-2xl space-y-2">
+              <span className="text-xs font-bold text-purple-900 block">Phần II: Đúng / Sai</span>
+              <div className="text-xl font-extrabold text-purple-950">{part2Avg} / 4.0 đ</div>
+              <div className="w-full bg-purple-200 rounded-full h-2">
+                <div
+                  className="bg-purple-600 h-2 rounded-full"
+                  style={{ width: `${(Number(part2Avg) / 4.0) * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-purple-800 font-medium block">Đạt 80% mục tiêu</span>
             </div>
-            <span className="text-[10px] text-amber-800 font-medium block">Độ chính xác: 82%</span>
-          </div>
 
-          <div className="p-4 bg-rose-50/70 border border-rose-200 rounded-2xl space-y-2">
-            <span className="text-xs font-bold text-rose-900 block">Phần IV: Tự luận</span>
-            <div className="text-xl font-extrabold text-rose-950">{part4Avg} / 1.5 đ</div>
-            <div className="w-full bg-rose-200 rounded-full h-2">
-              <div
-                className="bg-rose-600 h-2 rounded-full"
-                style={{ width: `${(Number(part4Avg) / 1.5) * 100}%` }}
-              />
+            <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2">
+              <span className="text-xs font-bold text-amber-900 block">Phần III: Trả lời ngắn</span>
+              <div className="text-xl font-extrabold text-amber-950">{part3Avg} / 1.5 đ</div>
+              <div className="w-full bg-amber-200 rounded-full h-2">
+                <div
+                  className="bg-amber-600 h-2 rounded-full"
+                  style={{ width: `${(Number(part3Avg) / 1.5) * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-amber-800 font-medium block">Đạt 82% mục tiêu</span>
             </div>
-            <span className="text-[10px] text-rose-800 font-medium block">Độ chính xác: 80%</span>
+
+            <div className="p-4 bg-rose-50/70 border border-rose-200 rounded-2xl space-y-2">
+              <span className="text-xs font-bold text-rose-900 block">Phần IV: Tự luận</span>
+              <div className="text-xl font-extrabold text-rose-950">{part4Avg} / 1.5 đ</div>
+              <div className="w-full bg-rose-200 rounded-full h-2">
+                <div
+                  className="bg-rose-600 h-2 rounded-full"
+                  style={{ width: `${(Number(part4Avg) / 1.5) * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-rose-800 font-medium block">Đạt 80% mục tiêu</span>
+            </div>
           </div>
         </div>
       </div>

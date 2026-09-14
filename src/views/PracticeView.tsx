@@ -10,9 +10,12 @@ import {
   Search,
   CheckCircle2,
   GraduationCap,
+  LineChart,
 } from 'lucide-react';
 import { GradeLevel, Chapter, Lesson, Exam } from '../types';
 import MathView from '../components/MathView';
+import { clientDataService } from '../services/clientDataService';
+import FunctionGraphPlotter from '../components/FunctionGraphPlotter';
 
 interface PracticeViewProps {
   selectedGrade: GradeLevel;
@@ -34,6 +37,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [showPlotter, setShowPlotter] = useState<boolean>(false);
 
   // Fetch chapters & lessons for the selected grade
   useEffect(() => {
@@ -41,23 +45,19 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
     async function loadData() {
       setLoading(true);
       try {
-        const [cRes, lRes, eRes] = await Promise.all([
-          fetch(`/api/curriculum/chapters?grade=${selectedGrade}`),
-          fetch(`/api/curriculum/lessons?grade=${selectedGrade}`),
-          fetch(`/api/exams?grade=${selectedGrade}&type=practice`),
+        const [loadedChapters, loadedLessons, loadedExams] = await Promise.all([
+          clientDataService.getChapters(selectedGrade),
+          clientDataService.getLessons(selectedGrade),
+          clientDataService.getExams({ grade: selectedGrade, type: 'practice' }),
         ]);
 
-        const cData = await cRes.json();
-        const lData = await lRes.json();
-        const eData = await eRes.json();
-
         if (mounted) {
-          setChapters(cData.chapters || []);
-          setLessons(lData.lessons || []);
-          setExams(eData.exams || []);
+          setChapters(loadedChapters);
+          setLessons(loadedLessons);
+          setExams(loadedExams);
 
-          if (cData.chapters && cData.chapters.length > 0) {
-            setSelectedChapterId(cData.chapters[0].id);
+          if (loadedChapters.length > 0) {
+            setSelectedChapterId(loadedChapters[0].id);
           }
           setSelectedLesson(null);
         }
@@ -110,14 +110,35 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
             </p>
           </div>
 
-          <button
-            onClick={onOpenImportModal}
-            className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/70 rounded-2xl text-xs font-bold transition flex items-center gap-2 shadow-2xs"
-          >
-            <UploadCloud className="w-4 h-4 text-blue-600" />
-            <span>Nhập đề Word/PDF</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowPlotter(!showPlotter)}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 shadow-2xs ${
+                showPlotter
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
+              }`}
+            >
+              <LineChart className="w-4 h-4" />
+              <span>{showPlotter ? 'Đóng đồ thị' : 'Đồ thị tương tác D3'}</span>
+            </button>
+
+            <button
+              onClick={onOpenImportModal}
+              className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/70 rounded-2xl text-xs font-bold transition flex items-center gap-2 shadow-2xs"
+            >
+              <UploadCloud className="w-4 h-4 text-blue-600" />
+              <span>Nhập đề Word/PDF</span>
+            </button>
+          </div>
         </div>
+
+        {/* Conditional D3 Function Plotter Widget */}
+        {showPlotter && (
+          <div className="pt-2 animate-in fade-in">
+            <FunctionGraphPlotter grade={selectedGrade} />
+          </div>
+        )}
 
         {/* 3 3D Class Cards Side by Side (Screenshot 1 & 2) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl">

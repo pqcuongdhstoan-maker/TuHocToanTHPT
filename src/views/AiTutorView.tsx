@@ -46,6 +46,7 @@ Em đang gặp khó khăn ở bài toán, định lí hay công thức nào? C�
   const [inputPrompt, setInputPrompt] = useState<string>(initialQuestion || '');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showMathToolbar, setShowMathToolbar] = useState<boolean>(false);
+  const [tutoringMode, setTutoringMode] = useState<'socratic' | 'error_checker' | 'formula_quiz'>('socratic');
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -93,11 +94,20 @@ Em đang gặp khó khăn ở bài toán, định lí hay công thức nào? C�
         .filter((m) => m.id !== 'welcome-1')
         .map((m) => ({ role: m.role, text: m.text }));
 
+      let promptToSend = text;
+      if (tutoringMode === 'socratic') {
+        promptToSend = `[CHẾ ĐỘ SƠ-CRÁT - GỢI Ý TỪNG BƯỚC]: Thầy hãy đóng vai gia sư Socratic. Không đưa ra ngay đáp số cuối cùng mà hãy đặt câu hỏi gợi mở hoặc gợi ý bước tư duy đầu tiên: ${text}`;
+      } else if (tutoringMode === 'error_checker') {
+        promptToSend = `[CHẾ ĐỘ BẮT LỖI SAI BÀI LÀM]: Dưới đây là bài làm / các bước biến đổi của em. Thầy hãy kiểm tra xem em bị sai ở bước nào và giải thích rõ nguyên nhân: ${text}`;
+      } else if (tutoringMode === 'formula_quiz') {
+        promptToSend = `[CHẾ ĐỘ ĐỐ VUI CÔNG THỨC]: Thầy hãy đố em một câu hỏi ngắn về công thức quan trọng của Toán ${selectedGrade}: ${text}`;
+      }
+
       const res = await fetch('/api/ai/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: text,
+          message: promptToSend,
           grade: selectedGrade,
           lessonTitle: `Toán THPT Lớp ${selectedGrade}`,
           history,
@@ -173,6 +183,48 @@ Em đang gặp khó khăn ở bài toán, định lí hay công thức nào? C�
           <Trash2 className="w-4 h-4" />
           <span className="hidden sm:inline">Làm mới</span>
         </button>
+      </div>
+
+      {/* 3 Pedagogical Tutoring Modes */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-3 flex items-center justify-between flex-wrap gap-2 shadow-2xs">
+        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-1">
+          Chế độ hướng dẫn của Thầy:
+        </span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setTutoringMode('socratic')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              tutoringMode === 'socratic'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <span>💡 Gợi ý từng bước (Socratic)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTutoringMode('error_checker')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              tutoringMode === 'error_checker'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <span>🔍 Bắt lỗi bài giải</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTutoringMode('formula_quiz')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              tutoringMode === 'formula_quiz'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <span>⚡ Đố vui công thức</span>
+          </button>
+        </div>
       </div>
 
       {/* Suggested Prompt Chips */}

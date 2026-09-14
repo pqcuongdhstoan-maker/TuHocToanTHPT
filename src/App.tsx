@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { User, GradeLevel, Chapter, Lesson } from './types';
-import Sidebar from './components/Sidebar';
+import Sidebar, { ActiveTab } from './components/Sidebar';
 import Navbar from './components/Navbar';
 import WordPdfImportModal from './components/WordPdfImportModal';
 import ExamTakingView from './components/ExamTakingView';
 import AuthModal from './components/AuthModal';
+import FunctionGraphPlotter from './components/FunctionGraphPlotter';
+import MathArenaModal from './components/MathArenaModal';
+import { clientDataService } from './services/clientDataService';
 
 import HomeView from './views/HomeView';
 import PracticeView from './views/PracticeView';
@@ -15,9 +18,7 @@ import AdminView from './views/AdminView';
 
 export default function App() {
   // Navigation & Screen state
-  const [activeTab, setActiveTab] = useState<
-    'home' | 'practice' | 'mock_exam' | 'ai_tutor' | 'stats' | 'admin'
-  >('home');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [selectedGrade, setSelectedGrade] = useState<GradeLevel>(12);
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
 
@@ -35,6 +36,7 @@ export default function App() {
   // Modals
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isArenaModalOpen, setIsArenaModalOpen] = useState<boolean>(false);
   const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
 
   // Cross-view context passing (e.g. ask AI about a specific question from exam view)
@@ -47,14 +49,12 @@ export default function App() {
   useEffect(() => {
     async function loadCurriculum() {
       try {
-        const [cRes, lRes] = await Promise.all([
-          fetch('/api/curriculum/chapters'),
-          fetch('/api/curriculum/lessons'),
+        const [cData, lData] = await Promise.all([
+          clientDataService.getChapters(),
+          clientDataService.getLessons(),
         ]);
-        const cData = await cRes.json();
-        const lData = await lRes.json();
-        setAllChapters(cData.chapters || []);
-        setAllLessons(lData.lessons || []);
+        setAllChapters(cData || []);
+        setAllLessons(lData || []);
       } catch (err) {
         console.warn('Initial curriculum load warning:', err);
       }
@@ -97,12 +97,42 @@ export default function App() {
       <Sidebar
         activeTab={activeTab}
         onSelectTab={(tab) => {
-          setActiveTab(tab);
-          setActiveExamId(null); // Return from active exam when navigating
+          if (tab === 'arena') {
+            setIsArenaModalOpen(true);
+          } else {
+            setActiveTab(tab);
+            setActiveExamId(null);
+          }
         }}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
+        onSwitchDemoUser={(role) => {
+          if (role === 'teacher') {
+            setCurrentUser({
+              id: 'u-admin-1',
+              username: 'admin',
+              fullName: 'Thầy Phan Quốc Cường',
+              role: 'admin',
+              grade: 12,
+              className: 'GV',
+              status: 'active',
+              createdAt: new Date().toISOString(),
+            });
+          } else {
+            setCurrentUser({
+              id: 'user-std-1',
+              username: 'student1',
+              fullName: 'Nguyễn Văn An',
+              role: 'student',
+              grade: selectedGrade,
+              className: `${selectedGrade}A1`,
+              status: 'active',
+              createdAt: new Date().toISOString(),
+            });
+          }
+        }}
+        onOpenImportModal={() => setIsImportModalOpen(true)}
         isMobileOpen={isMobileOpen}
         onCloseMobile={() => setIsMobileOpen(false)}
       />
@@ -141,6 +171,7 @@ export default function App() {
                   onStartExam={handleStartExam}
                   onOpenImportModal={() => setIsImportModalOpen(true)}
                   onOpenAuth={() => setIsAuthModalOpen(true)}
+                  onOpenArena={() => setIsArenaModalOpen(true)}
                 />
               )}
 
@@ -151,6 +182,34 @@ export default function App() {
                   onStartExam={handleStartExam}
                   onOpenImportModal={() => setIsImportModalOpen(true)}
                 />
+              )}
+
+              {activeTab === 'graph' && (
+                <div className="max-w-6xl mx-auto space-y-6">
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-blue-600 block">D3.JS VISUALIZATION</span>
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Khảo Sát Đồ Thị Tương Tác</h1>
+                    <p className="text-xs text-slate-500 mt-1">Trực quan hóa hình học Parabol, Hàm bậc 3 và Tiệm cận hàm phân thức</p>
+                  </div>
+                  <FunctionGraphPlotter grade={selectedGrade} />
+                </div>
+              )}
+
+              {activeTab === 'arena' && (
+                <div className="max-w-3xl mx-auto py-12 text-center space-y-6">
+                  <div className="p-8 sm:p-12 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 border-2 border-blue-200 rounded-3xl space-y-4 shadow-sm">
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900">Đấu Trường Toán Học 60s</h2>
+                    <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                      Thử thách phản xạ tính nhẩm và nhớ công thức toán học nhanh trong 60 giây!
+                    </p>
+                    <button
+                      onClick={() => setIsArenaModalOpen(true)}
+                      className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-2xl text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-blue-500/25 transition"
+                    >
+                      BẮT ĐẦU CHIẾN NGAY 🚀
+                    </button>
+                  </div>
+                </div>
               )}
 
               {activeTab === 'mock_exam' && (
@@ -216,6 +275,14 @@ export default function App() {
         onLoginSuccess={(user) => {
           setCurrentUser(user);
         }}
+      />
+
+      {/* Math Arena 60s Gamification Modal */}
+      <MathArenaModal
+        isOpen={isArenaModalOpen}
+        onClose={() => setIsArenaModalOpen(false)}
+        currentUser={currentUser}
+        selectedGrade={selectedGrade}
       />
     </div>
   );
