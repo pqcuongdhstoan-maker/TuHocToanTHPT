@@ -1,0 +1,6 @@
+{
+  "name": "Tự học Toán THPT",
+  "description": "Hệ thống tự học Toán THPT lớp 10, 11, 12 theo chương trình GDPT 2018 và sách Kết nối tri thức với cuộc sống. Giáo viên: Phan Quốc Cường - THPT Đức Hòa.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
