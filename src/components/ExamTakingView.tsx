@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Exam, Question, Submission, ExamAttemptAnswer, User } from '../types';
 import MathView from './MathView';
+import { geminiClientService } from '../services/geminiClientService';
 
 interface ExamTakingViewProps {
   examId: string;
@@ -212,6 +213,16 @@ export const ExamTakingView: React.FC<ExamTakingViewProps> = ({
       const optionsText = q.options ? q.options.map((o) => `${o.id}. ${o.content}`).join(' | ') : undefined;
       const studentAttempt = answers[q.id]?.value ? JSON.stringify(answers[q.id].value) : undefined;
 
+      if (geminiClientService.hasApiKey()) {
+        const result = await geminiClientService.getQuestionHint({
+          questionContent: q.content,
+          optionsText,
+          studentAttempt,
+        });
+        setHintForQuestion({ qId: q.id, text: result.text });
+        return;
+      }
+
       const res = await fetch('/api/ai/hint', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -225,8 +236,12 @@ export const ExamTakingView: React.FC<ExamTakingViewProps> = ({
       if (res.ok) {
         setHintForQuestion({ qId: q.id, text: data.hint });
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Hint error', e);
+      setHintForQuestion({
+        qId: q.id,
+        text: `⚠️ [Lỗi gợi ý AI]: ${e.message || 'Chưa thể lấy gợi ý lúc này. Vui lòng kiểm tra lại API Key.'}`,
+      });
     } finally {
       setLoadingHint(false);
     }

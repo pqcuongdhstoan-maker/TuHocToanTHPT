@@ -7,7 +7,9 @@ import ExamTakingView from './components/ExamTakingView';
 import AuthModal from './components/AuthModal';
 import FunctionGraphPlotter from './components/FunctionGraphPlotter';
 import MathArenaModal from './components/MathArenaModal';
+import ApiKeyModal from './components/ApiKeyModal';
 import { clientDataService } from './services/clientDataService';
+import { geminiClientService } from './services/geminiClientService';
 
 import HomeView from './views/HomeView';
 import PracticeView from './views/PracticeView';
@@ -37,6 +39,7 @@ export default function App() {
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isArenaModalOpen, setIsArenaModalOpen] = useState<boolean>(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
 
   // Cross-view context passing (e.g. ask AI about a specific question from exam view)
@@ -60,6 +63,11 @@ export default function App() {
       }
     }
     loadCurriculum();
+
+    // Guide user to set Gemini API key if missing (AI_INSTRUCTIONS.md Section 2)
+    if (!geminiClientService.hasApiKey()) {
+      setIsApiKeyModalOpen(true);
+    }
   }, []);
 
   // Handlers
@@ -149,6 +157,7 @@ export default function App() {
           }}
           onOpenImportModal={() => setIsImportModalOpen(true)}
           onOpenAuth={() => setIsAuthModalOpen(true)}
+          onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
         />
 
         {/* View Router */}
@@ -226,6 +235,7 @@ export default function App() {
                   currentUser={currentUser}
                   selectedGrade={selectedGrade}
                   initialQuestion={aiInitialPrompt}
+                  onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
                 />
               )}
 
@@ -283,6 +293,12 @@ export default function App() {
         onClose={() => setIsArenaModalOpen(false)}
         currentUser={currentUser}
         selectedGrade={selectedGrade}
+      />
+
+      {/* Model & Gemini API Key Settings Modal (AI_INSTRUCTIONS.md Section 2) */}
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
       />
     </div>
   );

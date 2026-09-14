@@ -1,6 +1,7 @@
-import React from 'react';
-import { Menu, Sparkles, UploadCloud, Bell, BookOpen } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Menu, Sparkles, UploadCloud, Bell, BookOpen, Key, Settings } from 'lucide-react';
 import { User, GradeLevel } from '../types';
+import { geminiClientService } from '../services/geminiClientService';
 
 interface NavbarProps {
   onToggleMobile: () => void;
@@ -9,6 +10,7 @@ interface NavbarProps {
   onSelectGrade: (grade: GradeLevel) => void;
   onOpenImportModal: () => void;
   onOpenAuth: () => void;
+  onOpenApiKeyModal: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -18,7 +20,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectGrade,
   onOpenImportModal,
   onOpenAuth,
+  onOpenApiKeyModal,
 }) => {
+  const [hasApiKey, setHasApiKey] = useState<boolean>(false);
+
+  useEffect(() => {
+    setHasApiKey(geminiClientService.hasApiKey());
+  }, []);
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 lg:px-8 py-3 transition-all">
       <div className="flex items-center justify-between gap-3">
@@ -76,11 +84,25 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>Nhập đề Word/PDF</span>
           </button>
 
-          {/* AI Status Badge */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50/70 border border-blue-200/60 rounded-xl text-[11px] font-bold text-blue-700">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-spin" style={{ animationDuration: '6s' }} />
-            <span className="hidden sm:inline">AI Gemini 3.8</span>
-          </div>
+          {/* Settings (API Key) button with prominent red text (AI_INSTRUCTIONS.md Section 2) */}
+          <button
+            onClick={() => {
+              onOpenApiKeyModal();
+              setHasApiKey(geminiClientService.hasApiKey());
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100/90 border-2 border-rose-300 text-rose-700 rounded-xl text-xs font-black transition shadow-xs group"
+            title="Nhập hoặc thay đổi Google Gemini API Key để sử dụng app"
+          >
+            <Key className="w-3.5 h-3.5 text-rose-600 group-hover:rotate-12 transition-transform shrink-0" />
+            <span className="text-rose-600 font-extrabold tracking-tight">
+              Lấy API key để sử dụng app
+            </span>
+            {hasApiKey ? (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="API Key đã sẵn sàng" />
+            ) : (
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping shrink-0" title="Chưa có API Key" />
+            )}
+          </button>
 
           {/* User Account / "Vào học ngay" button from Image 5 */}
           {currentUser ? (

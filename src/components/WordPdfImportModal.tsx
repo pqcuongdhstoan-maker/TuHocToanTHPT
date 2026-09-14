@@ -112,7 +112,9 @@ export const WordPdfImportModal: React.FC<WordPdfImportModalProps> = ({
       const baseTitle = selectedFile.name.replace(/\.[^/.]+$/, '');
       setExamTitle(baseTitle.includes('Toán') ? baseTitle : `Đề tự học: ${baseTitle}`);
     } catch (err: any) {
-      alert(`Không thể nhập tệp: ${err.message}`);
+      setProgressPercent(0);
+      setProgressStage('Đã dừng do lỗi: ' + (err.message || 'Lỗi xử lý tệp'));
+      alert(`Đã dừng do lỗi: ${err.message}`);
     } finally {
       setIsProcessing(false);
     }
