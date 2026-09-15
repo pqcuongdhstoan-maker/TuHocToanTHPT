@@ -38,15 +38,15 @@ export default function App() {
   const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('beedemy_sidebar_collapsed') === 'true';
+      return localStorage.getItem('beedemy_sidebar_pinned') === 'true' ? false : true;
     }
-    return false;
+    return true;
   });
 
   const handleToggleSidebarCollapse = () => {
     setIsSidebarCollapsed((prev) => {
       const next = !prev;
-      localStorage.setItem('beedemy_sidebar_collapsed', String(next));
+      localStorage.setItem('beedemy_sidebar_pinned', String(!next));
       return next;
     });
   };

@@ -71,28 +71,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setHasApiKey(geminiClientService.hasApiKey());
   }, []);
 
-  const [localCollapsed, setLocalCollapsed] = useState<boolean>(() => {
+  // Hover-to-expand state: collapsed (Image 2) by default, expands (Image 1) on mouse hover
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+  const [isPinned, setIsPinned] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('beedemy_sidebar_collapsed') === 'true';
+      return localStorage.getItem('beedemy_sidebar_pinned') === 'true';
     }
     return false;
   });
 
-  const isCollapsed = propIsCollapsed !== undefined ? propIsCollapsed : localCollapsed;
+  const isExpanded = isMobile || isPinned || isHovered;
+  const isCollapsed = !isExpanded;
 
   const toggleCollapse = () => {
-    if (onToggleCollapse) {
-      onToggleCollapse();
-    } else {
-      setLocalCollapsed((prev) => {
-        const next = !prev;
-        localStorage.setItem('beedemy_sidebar_collapsed', String(next));
-        return next;
-      });
-    }
+    setIsPinned((prev) => {
+      const next = !prev;
+      localStorage.setItem('beedemy_sidebar_pinned', String(next));
+      return next;
+    });
+    if (onToggleCollapse) onToggleCollapse();
   };
 
-  // Keyboard shortcut: Ctrl + B or Cmd + B to toggle sidebar
+  // Keyboard shortcut: Ctrl + B or Cmd + B to toggle sidebar pin
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
@@ -102,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleCollapse]);
+  }, []);
 
   // Main navigation items
   const menuItems: MenuItem[] = [
@@ -172,12 +172,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar container */}
       <aside
+        onMouseEnter={() => !isMobile && setIsHovered(true)}
+        onMouseLeave={() => !isMobile && setIsHovered(false)}
         className={`fixed top-0 left-0 bottom-0 z-50 bg-white border-r border-slate-200/80 flex flex-col justify-between transition-all duration-300 ease-in-out select-none ${
           isMobile
             ? 'w-64 translate-x-0 shadow-2xl'
-            : isCollapsed
-            ? 'w-20 -translate-x-full lg:translate-x-0'
-            : 'w-64 -translate-x-full lg:translate-x-0'
+            : isExpanded
+            ? 'w-64 translate-x-0 shadow-2xl shadow-slate-900/15'
+            : 'w-20 translate-x-0'
         }`}
       >
         {/* Top Header, Grade Selector & Navigation Links */}
