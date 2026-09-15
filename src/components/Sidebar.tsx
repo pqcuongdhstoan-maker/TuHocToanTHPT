@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   School,
   UploadCloud,
-  LogOut,
   ChevronLeft,
   ChevronRight,
   Key,
@@ -183,7 +182,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         {/* Top Header, Grade Selector & Navigation Links */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
+        <div 
+          className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {/* Header Branding */}
           {isCollapsed && !isMobile ? (
             <div className="py-4 border-b border-slate-100 flex flex-col items-center gap-2.5">
@@ -392,126 +394,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping shrink-0" title="Chưa có API Key" />
                   )}
                 </button>
-              )}
             </div>
           </nav>
-        </div>
-
-        {/* Bottom Section: User Profile & 1-Click Role Switcher (Matching media_1789459544282.png) */}
-        <div className={`border-t border-slate-100 bg-white ${isCollapsed && !isMobile ? 'p-2 space-y-2' : 'p-3 space-y-2.5'}`}>
-          {isCollapsed && !isMobile ? (
-            <div className="flex flex-col items-center gap-2">
-              {/* User Avatar */}
-              <div className="relative group">
-                <div
-                  onClick={() => onSwitchDemoUser?.(isTeacherOrAdmin ? 'student' : 'teacher')}
-                  className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold text-sm shadow-md shadow-blue-500/25 cursor-pointer hover:scale-105 transition"
-                >
-                  {currentUser ? currentUser.fullName.charAt(0) : 'N'}
-                </div>
-                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all z-50">
-                  <p className="font-extrabold">{currentUser ? currentUser.fullName : 'Nguyễn Văn An'}</p>
-                  <p className="text-[10px] text-blue-300 font-normal">
-                    {isTeacherOrAdmin ? 'Giáo viên' : `Lớp ${currentUser?.className || '12A1'}`} • Bấm để đổi vai trò
-                  </p>
-                </div>
-              </div>
-
-              {/* 1-Click Role Pill */}
-              <div className="relative group">
-                <button
-                  type="button"
-                  onClick={() => onSwitchDemoUser?.(isTeacherOrAdmin ? 'student' : 'teacher')}
-                  className="w-10 h-8 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-black text-xs border border-blue-200/70 flex items-center justify-center transition active:scale-95 shadow-2xs"
-                  aria-label="Đổi vai trò 1-Click"
-                >
-                  {isTeacherOrAdmin ? 'GV' : 'HS'}
-                </button>
-                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all z-50">
-                  Đổi vai trò: Đang là {isTeacherOrAdmin ? 'Giáo viên' : 'Học sinh'} (1-Click)
-                </div>
-              </div>
-
-              {/* Logout icon button */}
-              {currentUser && (
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  title="Đăng xuất"
-                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          ) : (
-            <>
-              {/* Card 1: User Profile Card (Matching image 2 top card) */}
-              <div className="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-2xs">
-                    {currentUser ? currentUser.fullName.charAt(0) : 'N'}
-                  </div>
-                  <div className="truncate">
-                    <h4 className="font-extrabold text-sm text-slate-900 leading-tight truncate">
-                      {currentUser ? currentUser.fullName : 'Nguyễn Văn An'}
-                    </h4>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">
-                      {isTeacherOrAdmin
-                        ? 'Giáo viên'
-                        : `Lớp ${currentUser?.className || '12A1'}`}
-                    </p>
-                  </div>
-                </div>
-                {currentUser && (
-                  <button
-                    type="button"
-                    onClick={onLogout}
-                    title="Đăng xuất"
-                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition shrink-0"
-                  >
-                    <LogOut className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Card 2: 1-Click Role Switcher (Matching image 2 bottom card) */}
-              <div className="p-3 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5">
-                <div className="flex items-center justify-between text-xs font-extrabold">
-                  <span className="text-slate-500 tracking-wider uppercase">
-                    ĐỔI VAI TRÒ:
-                  </span>
-                  <span className="text-blue-600 font-black tracking-tight">
-                    1-CLICK
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onSwitchDemoUser?.('student')}
-                    className={`py-2.5 px-3 rounded-xl text-sm font-bold text-center transition ${
-                      !isTeacherOrAdmin
-                        ? 'bg-blue-600 text-white shadow-xs font-extrabold'
-                        : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 font-medium'
-                    }`}
-                  >
-                    Học sinh
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onSwitchDemoUser?.('teacher')}
-                    className={`py-2.5 px-3 rounded-xl text-sm font-bold text-center transition ${
-                      isTeacherOrAdmin
-                        ? 'bg-blue-600 text-white shadow-xs font-extrabold'
-                        : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 font-medium'
-                    }`}
-                  >
-                    Giáo viên
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
         </div>
       </aside>
     </>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, GradeLevel, Chapter, Lesson } from './types';
 import Sidebar, { ActiveTab } from './components/Sidebar';
-import { Menu, Key } from 'lucide-react';
+import { Menu, Key, LogOut, ArrowLeftRight } from 'lucide-react';
 import WordPdfImportModal from './components/WordPdfImportModal';
 import ExamTakingView from './components/ExamTakingView';
 import AuthModal from './components/AuthModal';
@@ -140,6 +140,23 @@ export default function App() {
     setActiveTab('home');
   };
 
+  const handleQuickRoleSwitch = async (role: 'teacher' | 'student') => {
+    try {
+      const res = await authService.login({
+        identifier: role === 'teacher' ? 'admin' : 'student1',
+        password: 'password123',
+      });
+      setCurrentUser(res.user);
+      if (role === 'teacher') {
+        setActiveTab('admin');
+      } else {
+        setActiveTab('home');
+      }
+    } catch (err) {
+      console.error('Role switch error:', err);
+    }
+  };
+
   // 1. Loading screen while checking authentication session
   if (isCheckingAuth) {
     return (
@@ -206,31 +223,84 @@ export default function App() {
           isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'
         }`}
       >
-        {/* Mobile-only header (Desktop navbar completely removed as requested) */}
-        <div className="lg:hidden p-3 bg-white border-b border-slate-100 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
-          <button
-            type="button"
-            onClick={() => setIsMobileOpen(true)}
-            className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 flex items-center gap-2 transition"
-            aria-label="Mở thực đơn"
-          >
-            <Menu className="w-5 h-5 text-slate-800" />
-            <span className="font-black text-sm text-slate-900 tracking-tight">Tự học toán THPT</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-extrabold px-2.5 py-1 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
-              Lớp {selectedGrade}
-            </span>
+        {/* Top Header Bar: Displays logged-in user strictly at the top-right corner */}
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-100 px-4 sm:px-6 py-2 flex items-center justify-between shadow-2xs">
+          {/* Mobile drawer toggle */}
+          <div className="flex items-center gap-2 lg:hidden">
             <button
               type="button"
-              onClick={() => setIsApiKeyModalOpen(true)}
-              className="p-1.5 rounded-xl text-rose-600 bg-rose-50 border border-rose-200"
-              title="API Key"
+              onClick={() => setIsMobileOpen(true)}
+              className="p-1.5 rounded-xl text-slate-700 hover:bg-slate-100 flex items-center gap-2 transition"
+              aria-label="Mở thực đơn"
             >
-              <Key className="w-4 h-4" />
+              <Menu className="w-5 h-5 text-slate-800" />
+              <span className="font-black text-sm text-slate-900 tracking-tight">Tự học toán THPT</span>
             </button>
           </div>
-        </div>
+
+          {/* Desktop Left placeholder so user info is aligned strictly at the top-right */}
+          <div className="hidden lg:flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-400">
+              Học & Luyện thi Toán THPT
+            </span>
+          </div>
+
+          {/* Top-Right Corner: Logged-in user information, quick role toggle & logout */}
+          <div className="ml-auto flex items-center gap-2.5">
+            {/* 1-Click Role Switch button */}
+            {currentUser?.role === 'admin' ? (
+              <button
+                type="button"
+                onClick={() => handleQuickRoleSwitch('student')}
+                title="Chuyển chế độ xem Học sinh"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 rounded-lg transition"
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5 text-slate-500" />
+                <span>Xem như Học sinh</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleQuickRoleSwitch('teacher')}
+                title="Chuyển sang tài khoản Giáo viên"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#0f5132] bg-[#0f5132]/10 hover:bg-[#0f5132]/20 rounded-lg transition"
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5 text-[#0f5132]" />
+                <span>Chuyển Giáo viên</span>
+              </button>
+            )}
+
+            {/* User Profile Pill at top-right */}
+            <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200/80">
+              <div className="w-8 h-8 rounded-full bg-[#0f5132] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-bold text-xs sm:text-sm text-slate-800 leading-tight max-w-[140px] sm:max-w-[220px] truncate" title={currentUser?.name}>
+                  {currentUser?.name || 'Người dùng'}
+                </span>
+                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded w-fit ${
+                  currentUser?.role === 'admin'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-blue-50 text-blue-700'
+                }`}>
+                  {currentUser?.role === 'admin' ? 'Giáo viên' : 'Học sinh'}
+                </span>
+              </div>
+
+              {/* Logout Button */}
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Đăng xuất"
+                aria-label="Đăng xuất"
+                className="ml-1 p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </header>
 
         {/* View Router */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-white">
