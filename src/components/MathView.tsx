@@ -23,9 +23,9 @@ export const MathView: React.FC<MathViewProps> = ({
     if (!text) return null;
 
     // Tokenize text into regular text and LaTeX blocks
-    // Matches $$...$$, \[...\], and $...$
+    // Matches $$...$$, \[...\], \(...\), and $...$
     const tokens: Array<{ type: 'text' | 'inline-math' | 'block-math'; content: string }> = [];
-    const regex = /(\$\$(?:[\s\S]*?)\$\$|\\\[(?:[\s\S]*?)\\\]|\$(?:[^\$\n]+?)\$)/g;
+    const regex = /(\$\$(?:[\s\S]*?)\$\$|\\\[(?:[\s\S]*?)\\\]|\\\((?:[\s\S]*?)\\\)|\$(?:[^\$\n]+?)\$)/g;
     
     let lastIndex = 0;
     let match: RegExpExecArray | null;
@@ -48,6 +48,11 @@ export const MathView: React.FC<MathViewProps> = ({
       } else if (matchStr.startsWith('\\[') && matchStr.endsWith('\\]')) {
         tokens.push({
           type: 'block-math',
+          content: matchStr.slice(2, -2).trim(),
+        });
+      } else if (matchStr.startsWith('\\(') && matchStr.endsWith('\\)')) {
+        tokens.push({
+          type: 'inline-math',
           content: matchStr.slice(2, -2).trim(),
         });
       } else if (matchStr.startsWith('$') && matchStr.endsWith('$')) {
@@ -90,6 +95,7 @@ export const MathView: React.FC<MathViewProps> = ({
           displayMode: isBlock,
           throwOnError: false,
           strict: false,
+          output: 'html',
         });
 
         if (isBlock) {
