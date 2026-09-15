@@ -185,8 +185,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Header Branding */}
           {isCollapsed && !isMobile ? (
             <div className="py-4 border-b border-slate-100 flex flex-col items-center gap-2.5">
-              <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-xl shadow-md shadow-blue-500/25">
-                B
+              <div className="w-11 h-11 rounded-2xl bg-[#0f5132] text-white flex items-center justify-center font-black text-xl shadow-md shadow-[#0f5132]/25">
+                T
               </div>
               <button
                 type="button"
@@ -197,39 +197,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
-
-              {/* Collapsed Grade Switcher */}
-              <div className="relative group flex justify-center mt-1">
-                <button
-                  type="button"
-                  onClick={() =>
-                    onSelectGrade?.(
-                      selectedGrade === 12 ? 10 : ((selectedGrade + 1) as GradeLevel)
-                    )
-                  }
-                  className="px-2 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-extrabold text-[11px] border border-blue-200/70 transition shadow-2xs active:scale-95"
-                  aria-label="Đổi khối lớp"
-                >
-                  Lớp {selectedGrade}
-                </button>
-                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all z-50">
-                  Đang chọn Lớp {selectedGrade} (Bấm để đổi)
-                </div>
-              </div>
             </div>
           ) : (
             <div className="p-4 border-b border-slate-100">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-xl shadow-md shadow-blue-500/25 shrink-0">
-                    B
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-[#0f5132] text-white flex items-center justify-center font-black text-xl shadow-md shadow-[#0f5132]/25 shrink-0">
+                    T
                   </div>
                   <div className="overflow-hidden">
-                    <h1 className="font-extrabold text-base text-slate-900 leading-tight tracking-tight uppercase truncate">
-                      BEEDEMY
+                    <h1 className="font-black text-sm text-slate-900 leading-tight tracking-tight uppercase truncate" title="Tự học toán THPT">
+                      Tự học toán THPT
                     </h1>
-                    <p className="text-[11px] font-semibold text-blue-600 flex items-center gap-1 mt-0.5 truncate">
-                      <School className="w-3 h-3 shrink-0" /> THPT Đức Hòa
+                    <p className="text-[11px] font-semibold text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                      <School className="w-3 h-3 text-[#0f5132] shrink-0" /> THPT Đức Hòa
                     </p>
                   </div>
                 </div>
@@ -244,30 +225,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-              </div>
-
-              {/* Grade Selector Pills */}
-              <div className="mt-3">
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 px-1 flex items-center justify-between">
-                  <span>Khối lớp</span>
-                  <span className="text-blue-600 text-[10px]">SGK KNTT</span>
-                </div>
-                <div className="flex items-center bg-slate-100/90 p-1 rounded-2xl">
-                  {([10, 11, 12] as GradeLevel[]).map((grade) => (
-                    <button
-                      key={grade}
-                      type="button"
-                      onClick={() => onSelectGrade?.(grade)}
-                      className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all text-center ${
-                        selectedGrade === grade
-                          ? 'bg-white text-blue-700 shadow-xs font-extrabold ring-1 ring-slate-200/80'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      Lớp {grade}
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
           )}

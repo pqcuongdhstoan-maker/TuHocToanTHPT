@@ -88,14 +88,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Header */}
         <div className="text-center space-y-1 mb-5">
-          <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center mx-auto mb-2 shadow-sm shadow-blue-500/25 font-black text-lg">
-            B
+          <div className="w-12 h-12 rounded-2xl bg-[#0f5132] text-white flex items-center justify-center mx-auto mb-2 shadow-sm shadow-[#0f5132]/25 font-black text-lg">
+            T
           </div>
           <h2 className="text-lg font-bold text-slate-900">
             {isRegister ? 'Đăng ký tài khoản' : 'Đăng nhập hệ thống'}
           </h2>
           <p className="text-xs text-slate-500">
-            BEEDEMY • TỰ HỌC TOÁN THPT • THPT Đức Hòa
+            TỰ HỌC TOÁN THPT • THPT Đức Hòa
           </p>
         </div>
 

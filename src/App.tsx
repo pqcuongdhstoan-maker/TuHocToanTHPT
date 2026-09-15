@@ -145,7 +145,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-[#f0f4f3] flex flex-col items-center justify-center p-4">
         <div className="w-16 h-16 rounded-3xl bg-[#0f5132] text-white flex items-center justify-center font-black text-2xl shadow-xl shadow-[#0f5132]/25 animate-pulse mb-4">
-          B
+          T
         </div>
         <div className="text-base font-extrabold text-slate-800 tracking-tight">TỰ HỌC TOÁN THPT</div>
         <div className="text-xs text-slate-500 mt-1 font-medium">Đang kiểm tra phiên làm việc...</div>
@@ -215,7 +215,7 @@ export default function App() {
             aria-label="Mở thực đơn"
           >
             <Menu className="w-5 h-5 text-slate-800" />
-            <span className="font-extrabold text-sm text-slate-900 tracking-tight">Beedemy</span>
+            <span className="font-black text-sm text-slate-900 tracking-tight">Tự học toán THPT</span>
           </button>
           <div className="flex items-center gap-2">
             <span className="text-xs font-extrabold px-2.5 py-1 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
@@ -348,8 +348,8 @@ export default function App() {
         <footer className="mt-auto border-t border-slate-100 bg-white py-6 px-4 sm:px-8 text-xs text-slate-500">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
             <div>
-              <span className="font-extrabold text-slate-900">BEEDEMY • TỰ HỌC TOÁN THPT</span> — Giáo viên:{' '}
-              <span className="font-bold text-blue-700">Phan Quốc Cường</span> • Trường:{' '}
+              <span className="font-black text-slate-900">TỰ HỌC TOÁN THPT</span> — Giáo viên:{' '}
+              <span className="font-bold text-[#0f5132]">Phan Quốc Cường</span> • Trường:{' '}
               <span className="font-semibold text-slate-800">THPT Đức Hòa</span>
             </div>
             <div className="text-[11px] text-slate-400 font-medium">

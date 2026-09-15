@@ -97,7 +97,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </h1>
 
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl font-normal">
-            Thay vì giải đề tràn lan, Beedemy giúp bạn khoanh vùng kiến thức, chia nhỏ thành từng dạng bài cụ thể. Quét sạch 3 định dạng câu hỏi của đề thi tốt nghiệp THPT môn Toán với lời giải thích cặn kẽ từng bước.
+            Thay vì giải đề tràn lan, hệ thống Tự học toán THPT giúp bạn khoanh vùng kiến thức, chia nhỏ thành từng dạng bài cụ thể. Quét sạch 3 định dạng câu hỏi của đề thi tốt nghiệp THPT môn Toán với lời giải thích cặn kẽ từng bước.
           </p>
 
           <div className="pt-2 flex items-center flex-wrap gap-3.5">
@@ -193,7 +193,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* SECTION 2: BEEDEMY CALL-TO-ACTION (Matching Screenshot 3) */}
       <div className="py-8 text-center space-y-4 max-w-lg mx-auto">
         <h2 className="text-2xl sm:text-3xl font-black tracking-wider uppercase text-slate-900">
-          BEEDEMY
+          TỰ HỌC TOÁN THPT
         </h2>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -309,7 +309,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <div className="space-y-4 pt-2">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-blue-600">ĐỘC QUYỀN BEEDEMY</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-[#0f5132]">ĐỘC QUYỀN TỰ HỌC TOÁN THPT</span>
             <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Học Tương Tác & Luyện Phản Xạ</h3>
           </div>
           <span className="text-xs text-slate-400 font-medium hidden sm:inline">Trực quan hóa D3 & Gamification 60s</span>
