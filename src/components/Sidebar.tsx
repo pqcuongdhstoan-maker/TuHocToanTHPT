@@ -5,7 +5,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  GraduationCap,
   Key,
 } from 'lucide-react';
 import { User, GradeLevel } from '../types';
@@ -40,11 +39,10 @@ interface SidebarProps {
 }
 
 interface MenuItem {
-  id: ActiveTab | 'auth';
+  id: ActiveTab;
   label: string;
   iconUrl: string;
   badge?: string;
-  isAuth?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -106,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [toggleCollapse]);
 
-  // Main navigation items matching the user's reference images
+  // Main navigation items
   const menuItems: MenuItem[] = [
     {
       id: 'home',
@@ -128,17 +126,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'THỐNG KÊ',
       iconUrl: '/icons/sidebar/stats.png',
     },
-    // If not logged in, display the Key item matching reference screenshot
-    ...(!currentUser
-      ? [
-          {
-            id: 'auth' as const,
-            label: 'ĐĂNG NHẬP',
-            iconUrl: '/icons/sidebar/auth.png',
-            isAuth: true,
-          },
-        ]
-      : []),
     {
       id: 'graph',
       label: 'ĐỒ THỊ HÀM SỐ',
@@ -168,12 +155,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       : []),
   ];
 
-  const handleItemClick = (item: MenuItem) => {
-    if (item.isAuth) {
-      onOpenAuth();
-    } else {
-      onSelectTab(item.id as ActiveTab);
-    }
+  const handleItemClick = (tabId: ActiveTab) => {
+    onSelectTab(tabId);
     onCloseMobile();
   };
 
@@ -292,15 +275,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Navigation Links */}
           <nav className={isCollapsed && !isMobile ? 'p-2 space-y-2' : 'p-3 space-y-1.5'}>
             {menuItems.map((item) => {
-              const isActive = !item.isAuth && activeTab === item.id;
+              const isActive = activeTab === item.id;
 
               if (isCollapsed && !isMobile) {
-                // Collapsed item matching media_1789458216667.png
+                // Collapsed item
                 return (
                   <div key={item.id} className="relative group flex justify-center">
                     <button
                       type="button"
-                      onClick={() => handleItemClick(item)}
+                      onClick={() => handleItemClick(item.id)}
                       className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
                         isActive
                           ? 'bg-[#e6f4ea] shadow-xs'
@@ -329,12 +312,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 );
               }
 
-              // Expanded item matching media_1789458225064.png
+              // Expanded item
               return (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => handleItemClick(item)}
+                  onClick={() => handleItemClick(item.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-extrabold tracking-wide transition-all group ${
                     isActive
                       ? 'bg-[#e6f4ea] text-[#0a6640] shadow-xs'
@@ -406,7 +389,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
 
-            {/* Action: Lấy API key để sử dụng app (AI_INSTRUCTIONS.md Section 2) */}
+            {/* Action: Lấy API key để sử dụng app */}
             <div className="pt-1">
               {isCollapsed && !isMobile ? (
                 <div className="relative group flex justify-center">
@@ -455,100 +438,102 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </nav>
         </div>
 
-        {/* Bottom Section: User Profile & Role Switcher */}
-        <div className={`border-t border-slate-100 bg-white ${isCollapsed && !isMobile ? 'p-2 space-y-2' : 'p-4 space-y-3'}`}>
+        {/* Bottom Section: User Profile & 1-Click Role Switcher (Matching media_1789459544282.png) */}
+        <div className={`border-t border-slate-100 bg-white ${isCollapsed && !isMobile ? 'p-2 space-y-2' : 'p-3 space-y-2.5'}`}>
           {isCollapsed && !isMobile ? (
             <div className="flex flex-col items-center gap-2">
-              {currentUser ? (
-                <>
-                  <div className="relative group">
-                    <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-500/25 cursor-pointer">
-                      {currentUser.fullName.charAt(0)}
-                    </div>
-                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all z-50">
-                      <p className="font-extrabold">{currentUser.fullName}</p>
-                      <p className="text-[10px] text-blue-300 font-normal">
-                        {isTeacherOrAdmin ? 'Giáo viên' : `Lớp ${currentUser.className || '12'}`}
-                      </p>
-                    </div>
-                  </div>
+              {/* User Avatar */}
+              <div className="relative group">
+                <div
+                  onClick={() => onSwitchDemoUser?.(isTeacherOrAdmin ? 'student' : 'teacher')}
+                  className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold text-sm shadow-md shadow-blue-500/25 cursor-pointer hover:scale-105 transition"
+                >
+                  {currentUser ? currentUser.fullName.charAt(0) : 'N'}
+                </div>
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all z-50">
+                  <p className="font-extrabold">{currentUser ? currentUser.fullName : 'Nguyễn Văn An'}</p>
+                  <p className="text-[10px] text-blue-300 font-normal">
+                    {isTeacherOrAdmin ? 'Giáo viên' : `Lớp ${currentUser?.className || '12A1'}`} • Bấm để đổi vai trò
+                  </p>
+                </div>
+              </div>
 
-                  <button
-                    type="button"
-                    onClick={onLogout}
-                    title="Đăng xuất"
-                    className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </>
-              ) : (
+              {/* 1-Click Role Pill */}
+              <div className="relative group">
                 <button
                   type="button"
                   onClick={() => onSwitchDemoUser?.(isTeacherOrAdmin ? 'student' : 'teacher')}
-                  title={`Đổi vai trò (${isTeacherOrAdmin ? 'Học sinh' : 'Giáo viên'})`}
-                  className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition"
+                  className="w-10 h-8 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-black text-xs border border-blue-200/70 flex items-center justify-center transition active:scale-95 shadow-2xs"
+                  aria-label="Đổi vai trò 1-Click"
                 >
-                  <GraduationCap className="w-4 h-4" />
+                  {isTeacherOrAdmin ? 'GV' : 'HS'}
+                </button>
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all z-50">
+                  Đổi vai trò: Đang là {isTeacherOrAdmin ? 'Giáo viên' : 'Học sinh'} (1-Click)
+                </div>
+              </div>
+
+              {/* Logout icon button */}
+              {currentUser && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  title="Đăng xuất"
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                >
+                  <LogOut className="w-4 h-4" />
                 </button>
               )}
             </div>
           ) : (
             <>
-              {/* User Status Bar */}
-              {currentUser ? (
-                <div className="flex items-center justify-between p-2 bg-slate-50 rounded-xl border border-slate-200/80">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
-                      {currentUser.fullName.charAt(0)}
-                    </div>
-                    <div className="truncate">
-                      <p className="text-xs font-bold text-slate-800 truncate">
-                        {currentUser.fullName}
-                      </p>
-                      <p className="text-[10px] text-slate-500 flex items-center gap-1">
-                        {isTeacherOrAdmin ? (
-                          <span className="text-blue-600 font-semibold">Giáo viên</span>
-                        ) : (
-                          <span>Lớp {currentUser.className || '12A1'}</span>
-                        )}
-                      </p>
-                    </div>
+              {/* Card 1: User Profile Card (Matching image 2 top card) */}
+              <div className="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-2xs">
+                    {currentUser ? currentUser.fullName.charAt(0) : 'N'}
                   </div>
+                  <div className="truncate">
+                    <h4 className="font-extrabold text-sm text-slate-900 leading-tight truncate">
+                      {currentUser ? currentUser.fullName : 'Nguyễn Văn An'}
+                    </h4>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">
+                      {isTeacherOrAdmin
+                        ? 'Giáo viên'
+                        : `Lớp ${currentUser?.className || '12A1'}`}
+                    </p>
+                  </div>
+                </div>
+                {currentUser && (
                   <button
                     type="button"
                     onClick={onLogout}
                     title="Đăng xuất"
-                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition shrink-0"
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="w-5 h-5" />
                   </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onOpenAuth}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold shadow-md shadow-blue-500/20 transition"
-                >
-                  <img src="/icons/sidebar/auth.png" alt="Key" className="w-4 h-4 object-contain brightness-200" />
-                  <span>Đăng nhập tài khoản</span>
-                </button>
-              )}
+                )}
+              </div>
 
-              {/* Demo account quick switcher */}
-              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2">
-                <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5 px-1 flex items-center justify-between">
-                  <span>Đổi vai trò:</span>
-                  <span className="text-[9px] text-blue-600 font-bold">1-Click</span>
+              {/* Card 2: 1-Click Role Switcher (Matching image 2 bottom card) */}
+              <div className="p-3 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-extrabold">
+                  <span className="text-slate-500 tracking-wider uppercase">
+                    ĐỔI VAI TRÒ:
+                  </span>
+                  <span className="text-blue-600 font-black tracking-tight">
+                    1-CLICK
+                  </span>
                 </div>
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => onSwitchDemoUser?.('student')}
-                    className={`px-2 py-1.5 rounded-lg text-xs font-medium text-center transition ${
-                      currentUser?.role === 'student'
-                        ? 'bg-blue-600 text-white shadow-xs font-bold'
-                        : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                    className={`py-2.5 px-3 rounded-xl text-sm font-bold text-center transition ${
+                      !isTeacherOrAdmin
+                        ? 'bg-blue-600 text-white shadow-xs font-extrabold'
+                        : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 font-medium'
                     }`}
                   >
                     Học sinh
@@ -556,28 +541,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     type="button"
                     onClick={() => onSwitchDemoUser?.('teacher')}
-                    className={`px-2 py-1.5 rounded-lg text-xs font-medium text-center transition ${
+                    className={`py-2.5 px-3 rounded-xl text-sm font-bold text-center transition ${
                       isTeacherOrAdmin
-                        ? 'bg-blue-600 text-white shadow-xs font-bold'
-                        : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                        ? 'bg-blue-600 text-white shadow-xs font-extrabold'
+                        : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 font-medium'
                     }`}
                   >
                     Giáo viên
                   </button>
                 </div>
-              </div>
-
-              {/* Footer links */}
-              <div className="pt-2 border-t border-slate-100 flex flex-col gap-1 text-[11px] text-slate-400 font-medium">
-                <a href="#about" onClick={(e) => e.preventDefault()} className="hover:text-slate-600 transition">
-                  Về chúng tôi
-                </a>
-                <a href="#terms" onClick={(e) => e.preventDefault()} className="hover:text-slate-600 transition">
-                  Điều khoản
-                </a>
-                <a href="#privacy" onClick={(e) => e.preventDefault()} className="hover:text-slate-600 transition">
-                  Bảo mật
-                </a>
               </div>
             </>
           )}
