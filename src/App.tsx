@@ -10,6 +10,8 @@ import MathArenaModal from './components/MathArenaModal';
 import ApiKeyModal from './components/ApiKeyModal';
 import { clientDataService } from './services/clientDataService';
 import { geminiClientService } from './services/geminiClientService';
+import { authService } from './services/authService';
+import LoginPage from './components/LoginPage';
 
 import HomeView from './views/HomeView';
 import PracticeView from './views/PracticeView';
@@ -24,16 +26,9 @@ export default function App() {
   const [selectedGrade, setSelectedGrade] = useState<GradeLevel>(12);
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
 
-  // User state
-  const [currentUser, setCurrentUser] = useState<User | null>({
-    id: 'user-std-1',
-    username: 'student1',
-    fullName: 'Nguyễn Văn An',
-    role: 'student',
-    grade: 12,
-    className: '12A1',
-    school: 'THPT Đức Hòa',
-  });
+  // User & Auth state (Mandatory login enforced)
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
 
   // Modals
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
@@ -64,6 +59,23 @@ export default function App() {
   const [allLessons, setAllLessons] = useState<Lesson[]>([]);
 
   useEffect(() => {
+    async function initAuth() {
+      try {
+        const user = await authService.checkSession();
+        if (user) {
+          setCurrentUser(user);
+          if (user.role === 'admin') {
+            setActiveTab('admin');
+          }
+        }
+      } catch (err) {
+        console.warn('Initial session check warning:', err);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    }
+    initAuth();
+
     async function loadCurriculum() {
       try {
         const [cData, lData] = await Promise.all([
@@ -109,9 +121,42 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
+  const handleLoginSuccess = (user: User) => {
+    setCurrentUser(user);
+    if (user.role === 'admin') {
+      setActiveTab('admin');
+    } else {
+      setActiveTab('home');
+    }
   };
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (e) {
+      console.warn('Logout error:', e);
+    }
+    setCurrentUser(null);
+    setActiveTab('home');
+  };
+
+  // 1. Loading screen while checking authentication session
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-[#f0f4f3] flex flex-col items-center justify-center p-4">
+        <div className="w-16 h-16 rounded-3xl bg-[#0f5132] text-white flex items-center justify-center font-black text-2xl shadow-xl shadow-[#0f5132]/25 animate-pulse mb-4">
+          B
+        </div>
+        <div className="text-base font-extrabold text-slate-800 tracking-tight">TỰ HỌC TOÁN THPT</div>
+        <div className="text-xs text-slate-500 mt-1 font-medium">Đang kiểm tra phiên làm việc...</div>
+      </div>
+    );
+  }
+
+  // 2. Unauthenticated Gate: Render dedicated standalone login page
+  if (!currentUser) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div className="min-h-screen bg-white text-slate-900 flex font-sans antialiased">
@@ -129,29 +174,20 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
-        onSwitchDemoUser={(role) => {
-          if (role === 'teacher') {
-            setCurrentUser({
-              id: 'u-admin-1',
-              username: 'admin',
-              fullName: 'Thầy Phan Quốc Cường',
-              role: 'admin',
-              grade: 12,
-              className: 'GV',
-              status: 'active',
-              createdAt: new Date().toISOString(),
+        onSwitchDemoUser={async (role) => {
+          try {
+            const res = await authService.login({
+              identifier: role === 'teacher' ? 'admin' : 'student1',
+              password: 'password123',
             });
-          } else {
-            setCurrentUser({
-              id: 'user-std-1',
-              username: 'student1',
-              fullName: 'Nguyễn Văn An',
-              role: 'student',
-              grade: selectedGrade,
-              className: `${selectedGrade}A1`,
-              status: 'active',
-              createdAt: new Date().toISOString(),
-            });
+            setCurrentUser(res.user);
+            if (role === 'teacher') {
+              setActiveTab('admin');
+            } else {
+              setActiveTab('home');
+            }
+          } catch (err) {
+            console.error('Demo switch login error:', err);
           }
         }}
         onOpenImportModal={() => setIsImportModalOpen(true)}
@@ -280,10 +316,29 @@ export default function App() {
               )}
 
               {activeTab === 'admin' && (
-                <AdminView
-                  currentUser={currentUser}
-                  onOpenImportModal={() => setIsImportModalOpen(true)}
-                />
+                currentUser?.role === 'admin' ? (
+                  <AdminView
+                    currentUser={currentUser}
+                    onOpenImportModal={() => setIsImportModalOpen(true)}
+                  />
+                ) : (
+                  <div className="max-w-md mx-auto py-16 text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-2xl font-black">
+                      ✕
+                    </div>
+                    <h2 className="text-xl font-black text-slate-800">Không có quyền truy cập</h2>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Khu vực Quản Trị chỉ dành riêng cho Giáo viên / Quản trị viên. Vui lòng liên hệ Thầy Phan Quốc Cường nếu cần cấp quyền.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('home')}
+                      className="px-6 py-2.5 bg-[#0f5132] hover:bg-[#0a3d25] text-white font-bold rounded-xl text-xs transition shadow-sm"
+                    >
+                      Về Trang Chủ
+                    </button>
+                  </div>
+                )
               )}
             </>
           )}

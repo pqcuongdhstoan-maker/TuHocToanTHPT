@@ -153,6 +153,20 @@ function getInitialData(): DatabaseSchema {
       createdAt: new Date().toISOString(),
     },
     {
+      id: 'u-student-0',
+      username: 'student1',
+      passwordHash: adminPassword,
+      fullName: 'Nguyễn Văn An',
+      studentCode: 'DH2026-000',
+      email: 'student1@thptduchoa.edu.vn',
+      grade: 12,
+      className: '12A1',
+      role: 'student',
+      status: 'active',
+      mustChangePassword: false,
+      createdAt: new Date().toISOString(),
+    },
+    {
       id: 'u-student-1',
       username: 'quan_12a1',
       passwordHash: adminPassword,
@@ -632,8 +646,16 @@ function getInitialData(): DatabaseSchema {
   };
 }
 
+export interface SessionData {
+  token: string;
+  userId: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
 class DatabaseManager {
   private data: DatabaseSchema;
+  private sessions: Map<string, SessionData> = new Map();
 
   constructor() {
     this.ensureDataDirectory();
@@ -703,6 +725,40 @@ class DatabaseManager {
       return this.data.users[idx];
     }
     return null;
+  }
+
+  // Sessions
+  public createSession(userId: string): string {
+    const token = 'sess_' + crypto.randomBytes(24).toString('hex');
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    this.sessions.set(token, {
+      token,
+      userId,
+      createdAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+    });
+    return token;
+  }
+
+  public getSession(token: string): SessionData | undefined {
+    const session = this.sessions.get(token);
+    if (!session) return undefined;
+    if (new Date(session.expiresAt).getTime() < Date.now()) {
+      this.sessions.delete(token);
+      return undefined;
+    }
+    return session;
+  }
+
+  public getUserBySessionToken(token: string): UserData | undefined {
+    const session = this.getSession(token);
+    if (!session) return undefined;
+    return this.getUserById(session.userId);
+  }
+
+  public deleteSession(token: string) {
+    this.sessions.delete(token);
   }
 
   // Curriculum

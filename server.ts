@@ -34,7 +34,7 @@ app.get('/api/health', (req, res) => {
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
-    return res.status(400).json({ error: 'Vui lòng nhập tên đăng nhập và mật khẩu.' });
+    return res.status(400).json({ error: 'Vui lòng nhập tên đăng nhập hoặc email và mật khẩu.' });
   }
 
   const user = db.getUserByUsername(username);
@@ -52,9 +52,10 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   db.updateUser(user.id, { lastLoginAt: new Date().toISOString() });
+  const token = db.createSession(user.id);
 
   const { passwordHash: _, ...safeUser } = user;
-  res.json({ user: safeUser });
+  res.json({ user: safeUser, token });
 });
 
 app.post('/api/auth/register', (req, res) => {
@@ -83,8 +84,68 @@ app.post('/api/auth/register', (req, res) => {
   };
 
   db.addUser(newUser);
+  const token = db.createSession(newUser.id);
   const { passwordHash: _, ...safeUser } = newUser;
+  res.json({ user: safeUser, token });
+});
+
+// Verify active session token
+app.get('/api/auth/me', (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : (req.query.token as string);
+  if (!token) {
+    return res.status(401).json({ error: 'Chưa cung cấp phiên đăng nhập.' });
+  }
+
+  const user = db.getUserBySessionToken(token);
+  if (!user) {
+    return res.status(401).json({ error: 'Phiên đăng nhập đã hết hạn hoặc không hợp lệ.' });
+  }
+
+  if (user.status === 'locked') {
+    return res.status(403).json({ error: 'Tài khoản đã bị khóa bởi quản trị viên.' });
+  }
+
+  const { passwordHash: _, ...safeUser } = user;
   res.json({ user: safeUser });
+});
+
+// Logout endpoint
+app.post('/api/auth/logout', (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : (req.body?.token as string);
+  if (token) {
+    db.deleteSession(token);
+  }
+  res.json({ success: true, message: 'Đăng xuất thành công.' });
+});
+
+// Forgot password request endpoint
+app.post('/api/auth/forgot-password', (req, res) => {
+  const { identifier } = req.body;
+  if (!identifier) {
+    return res.status(400).json({ error: 'Vui lòng nhập email hoặc tên đăng nhập.' });
+  }
+
+  const user = db.getUserByUsername(identifier);
+  if (!user) {
+    return res.status(404).json({ error: 'Không tìm thấy tài khoản với thông tin đã cung cấp.' });
+  }
+
+  if (user.email) {
+    res.json({
+      success: true,
+      hasEmail: true,
+      email: user.email,
+      message: `Hướng dẫn đặt lại mật khẩu đã được gửi đến địa chỉ email: ${user.email}. Vui lòng kiểm tra hòm thư của bạn.`,
+    });
+  } else {
+    res.json({
+      success: true,
+      hasEmail: false,
+      message: 'Tài khoản này được cấp trực tiếp và chưa liên kết email. Vui lòng liên hệ Thầy Phan Quốc Cường (Giáo viên quản trị) để được cấp lại mật khẩu.',
+    });
+  }
 });
 
 app.post('/api/auth/change-password', (req, res) => {
