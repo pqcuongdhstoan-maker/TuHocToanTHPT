@@ -5,10 +5,11 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  UserCheck,
   GraduationCap,
+  Key,
 } from 'lucide-react';
-import { User } from '../types';
+import { User, GradeLevel } from '../types';
+import { geminiClientService } from '../services/geminiClientService';
 
 export type ActiveTab =
   | 'home'
@@ -33,6 +34,9 @@ interface SidebarProps {
   onCloseMobile: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  selectedGrade?: GradeLevel;
+  onSelectGrade?: (grade: GradeLevel) => void;
+  onOpenApiKeyModal?: () => void;
 }
 
 interface MenuItem {
@@ -56,9 +60,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
   isCollapsed: propIsCollapsed,
   onToggleCollapse,
+  selectedGrade = 12,
+  onSelectGrade,
+  onOpenApiKeyModal,
 }) => {
   const isMobile = isMobileOpen ?? mobileOpen ?? false;
   const isTeacherOrAdmin = currentUser?.role === 'admin' || currentUser?.role === 'teacher';
+
+  const [hasApiKey, setHasApiKey] = useState<boolean>(false);
+
+  useEffect(() => {
+    setHasApiKey(geminiClientService.hasApiKey());
+  }, []);
 
   const [localCollapsed, setLocalCollapsed] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -115,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'THỐNG KÊ',
       iconUrl: '/icons/sidebar/stats.png',
     },
-    // If not logged in, display the Key item matching the reference screenshot
+    // If not logged in, display the Key item matching reference screenshot
     ...(!currentUser
       ? [
           {
@@ -184,7 +197,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : 'w-64 -translate-x-full lg:translate-x-0'
         }`}
       >
-        {/* Top Header & Navigation Links */}
+        {/* Top Header, Grade Selector & Navigation Links */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
           {/* Header Branding */}
           {isCollapsed && !isMobile ? (
@@ -201,6 +214,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
+
+              {/* Collapsed Grade Switcher */}
+              <div className="relative group flex justify-center mt-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onSelectGrade?.(
+                      selectedGrade === 12 ? 10 : ((selectedGrade + 1) as GradeLevel)
+                    )
+                  }
+                  className="px-2 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-extrabold text-[11px] border border-blue-200/70 transition shadow-2xs active:scale-95"
+                  aria-label="Đổi khối lớp"
+                >
+                  Lớp {selectedGrade}
+                </button>
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-all z-50">
+                  Đang chọn Lớp {selectedGrade} (Bấm để đổi)
+                </div>
+              </div>
             </div>
           ) : (
             <div className="p-4 border-b border-slate-100">
@@ -231,13 +263,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               </div>
 
-              <div className="mt-3 bg-blue-50/80 border border-blue-100/90 rounded-xl p-2.5">
-                <p className="text-[11px] text-blue-950 font-bold leading-tight">
-                  Tự học Toán THPT 10 • 11 • 12
-                </p>
-                <div className="flex items-center gap-1.5 mt-1 text-[10px] text-blue-700 font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
-                  <span className="truncate">Chuẩn SGK Kết nối tri thức</span>
+              {/* Grade Selector Pills */}
+              <div className="mt-3">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 px-1 flex items-center justify-between">
+                  <span>Khối lớp</span>
+                  <span className="text-blue-600 text-[10px]">SGK KNTT</span>
+                </div>
+                <div className="flex items-center bg-slate-100/90 p-1 rounded-2xl">
+                  {([10, 11, 12] as GradeLevel[]).map((grade) => (
+                    <button
+                      key={grade}
+                      type="button"
+                      onClick={() => onSelectGrade?.(grade)}
+                      className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all text-center ${
+                        selectedGrade === grade
+                          ? 'bg-white text-blue-700 shadow-xs font-extrabold ring-1 ring-slate-200/80'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Lớp {grade}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -317,7 +363,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         {item.badge}
                       </span>
                     )}
-                    {/* Active dot indicator on the right side from screenshot */}
+                    {/* Active dot indicator on right side */}
                     {isActive && (
                       <span className="w-2.5 h-2.5 rounded-full bg-[#0a6640] shrink-0" />
                     )}
@@ -356,6 +402,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <UploadCloud className="w-4 h-4 text-blue-600" />
                   <span>Nhập đề từ Word / PDF</span>
+                </button>
+              )}
+            </div>
+
+            {/* Action: Lấy API key để sử dụng app (AI_INSTRUCTIONS.md Section 2) */}
+            <div className="pt-1">
+              {isCollapsed && !isMobile ? (
+                <div className="relative group flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenApiKeyModal?.();
+                      setHasApiKey(geminiClientService.hasApiKey());
+                    }}
+                    className="w-12 h-12 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/90 flex items-center justify-center transition shadow-2xs group relative"
+                    aria-label="Lấy API key để sử dụng app"
+                  >
+                    <Key className="w-5 h-5 text-rose-600 transition-transform group-hover:scale-110" />
+                    <span
+                      className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+                        hasApiKey ? 'bg-emerald-500' : 'bg-rose-500 animate-ping'
+                      }`}
+                    />
+                  </button>
+                  <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1 transition-all duration-150 z-50 flex items-center gap-1.5">
+                    <span>Lấy API key để sử dụng app</span>
+                    <span className={`w-2 h-2 rounded-full ${hasApiKey ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenApiKeyModal?.();
+                    setHasApiKey(geminiClientService.hasApiKey());
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2.5 bg-rose-50 hover:bg-rose-100/90 border border-rose-200/90 text-rose-700 rounded-2xl text-xs font-extrabold transition shadow-2xs group"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Key className="w-4 h-4 text-rose-600 group-hover:rotate-12 transition-transform shrink-0" />
+                    <span className="truncate">Lấy API key để dùng app</span>
+                  </div>
+                  {hasApiKey ? (
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Đã có API Key" />
+                  ) : (
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping shrink-0" title="Chưa có API Key" />
+                  )}
                 </button>
               )}
             </div>

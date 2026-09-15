@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, GradeLevel, Chapter, Lesson } from './types';
 import Sidebar, { ActiveTab } from './components/Sidebar';
-import Navbar from './components/Navbar';
+import { Menu, Key } from 'lucide-react';
 import WordPdfImportModal from './components/WordPdfImportModal';
 import ExamTakingView from './components/ExamTakingView';
 import AuthModal from './components/AuthModal';
@@ -159,6 +159,9 @@ export default function App() {
         onCloseMobile={() => setIsMobileOpen(false)}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={handleToggleSidebarCollapse}
+        selectedGrade={selectedGrade}
+        onSelectGrade={(grade) => setSelectedGrade(grade)}
+        onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -167,18 +170,31 @@ export default function App() {
           isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'
         }`}
       >
-        {/* Sticky Top Navbar */}
-        <Navbar
-          onToggleMobile={() => setIsMobileOpen(!isMobileOpen)}
-          currentUser={currentUser}
-          selectedGrade={selectedGrade}
-          onSelectGrade={(grade) => {
-            setSelectedGrade(grade);
-          }}
-          onOpenImportModal={() => setIsImportModalOpen(true)}
-          onOpenAuth={() => setIsAuthModalOpen(true)}
-          onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
-        />
+        {/* Mobile-only header (Desktop navbar completely removed as requested) */}
+        <div className="lg:hidden p-3 bg-white border-b border-slate-100 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen(true)}
+            className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 flex items-center gap-2 transition"
+            aria-label="Mở thực đơn"
+          >
+            <Menu className="w-5 h-5 text-slate-800" />
+            <span className="font-extrabold text-sm text-slate-900 tracking-tight">Beedemy</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-extrabold px-2.5 py-1 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
+              Lớp {selectedGrade}
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsApiKeyModalOpen(true)}
+              className="p-1.5 rounded-xl text-rose-600 bg-rose-50 border border-rose-200"
+              title="API Key"
+            >
+              <Key className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
 
         {/* View Router */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-white">
