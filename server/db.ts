@@ -134,7 +134,7 @@ function getInitialData(): DatabaseSchema {
       username: 'admin',
       passwordHash: adminPassword,
       fullName: 'Thầy Phan Quốc Cường',
-      email: 'pqcuong.dhstoan@gmail.com',
+      email: 'admin@thptduchoa.edu.vn',
       role: 'admin',
       status: 'active',
       mustChangePassword: false,
@@ -707,9 +707,25 @@ class DatabaseManager {
   }
 
   public getUserByUsername(username: string): UserData | undefined {
-    return this.data.users.find(
-      (u) => u.username.toLowerCase() === username.toLowerCase() || (u.email && u.email.toLowerCase() === username.toLowerCase())
-    );
+    const norm = username.trim().toLowerCase();
+    return this.data.users.find((u) => {
+      const uName = u.username.toLowerCase();
+      const uEmail = (u.email || '').toLowerCase();
+      if (uName === norm || uEmail === norm) return true;
+      if (uName === 'admin') {
+        const adminAliases = [
+          'admin',
+          'admin@thptduchoa.edu.vn',
+          'pqcuong.dhstoan@gmail.com',
+          'cuong@thptduchoa.edu.vn',
+          'phanvuongcuong',
+          'thaycuong',
+          'gv_cuong',
+        ];
+        if (adminAliases.includes(norm)) return true;
+      }
+      return false;
+    });
   }
 
   public addUser(user: UserData) {

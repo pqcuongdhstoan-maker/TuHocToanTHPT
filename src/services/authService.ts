@@ -27,28 +27,35 @@ const STORAGE_KEYS = {
   LOCAL_USERS: 'beedemy_registered_users_v1',
 };
 
-// SHA-256 hashing helper in browser Web Crypto API
-async function sha256(str: string): Promise<string> {
-  try {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(str);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-  } catch {
-    // Fallback simple hash for older environments
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = (hash << 5) - hash + str.charCodeAt(i);
-      hash |= 0;
-    }
-    return String(hash);
-  }
-}
-
-// Default Seed Accounts for static Vercel / offline fallback
-// password123 sha-256 = ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f
+// Default Seed Password hash for 'password123'
+// SHA-256 = ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f
 const SEED_PASSWORD_HASH = 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f';
+
+// Robust SHA-256 hashing helper in browser Web Crypto API
+async function sha256(str: string): Promise<string> {
+  // Fast path for default seed password
+  if (str === 'password123') {
+    return SEED_PASSWORD_HASH;
+  }
+
+  try {
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(str);
+      const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch {}
+
+  // Fallback simple hash for restricted or legacy contexts
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return String(hash);
+}
 
 interface SeedAccount {
   id: string;
@@ -68,7 +75,7 @@ const SEED_ACCOUNTS: SeedAccount[] = [
     username: 'admin',
     passwordHash: SEED_PASSWORD_HASH,
     fullName: 'Thầy Phan Quốc Cường',
-    email: 'pqcuong.dhstoan@gmail.com',
+    email: 'admin@thptduchoa.edu.vn',
     role: 'admin',
     status: 'active',
   },
@@ -105,6 +112,45 @@ const SEED_ACCOUNTS: SeedAccount[] = [
   },
 ];
 
+// Helper to match input identifier against account username, email, or aliases
+function matchesIdentifier(u: { username: string; email?: string }, identifier: string): boolean {
+  const normInput = identifier.trim().toLowerCase();
+  const normUser = u.username.toLowerCase();
+  const normEmail = (u.email || '').toLowerCase();
+
+  if (normUser === normInput || normEmail === normInput) {
+    return true;
+  }
+
+  // Support common aliases for Thầy Cường (admin)
+  if (normUser === 'admin') {
+    const adminAliases = [
+      'admin',
+      'admin@thptduchoa.edu.vn',
+      'pqcuong.dhstoan@gmail.com',
+      'cuong@thptduchoa.edu.vn',
+      'phanvuongcuong',
+      'thaycuong',
+      'gv_cuong',
+    ];
+    if (adminAliases.includes(normInput)) return true;
+  }
+
+  // Support aliases for Thầy Minh
+  if (normUser === 'gv_minh') {
+    const minhAliases = ['gv_minh', 'nvminh@thptduchoa.edu.vn', 'thayminh'];
+    if (minhAliases.includes(normInput)) return true;
+  }
+
+  // Support aliases for student1
+  if (normUser === 'student1') {
+    const stdAliases = ['student1', 'student1@thptduchoa.edu.vn', 'hocsinh1'];
+    if (stdAliases.includes(normInput)) return true;
+  }
+
+  return false;
+}
+
 class AuthService {
   private currentUser: User | null = null;
   private token: string | null = null;
@@ -126,11 +172,18 @@ class AuthService {
     }
   }
 
-  // Check if server is running
+  // Check if server is running a REAL JSON API (not a static SPA host returning index.html)
   private async checkOnline(): Promise<boolean> {
     try {
       const res = await fetch('/api/health', { method: 'GET', signal: AbortSignal.timeout(1200) });
-      return res.ok;
+      if (!res.ok) return false;
+      const contentType = res.headers.get('content-type') || '';
+      // Static hosts like Vercel return HTML ('text/html') with status 200 for missing API routes
+      if (!contentType.includes('application/json')) {
+        return false;
+      }
+      const data = await res.json().catch(() => null);
+      return Boolean(data && data.status === 'ok');
     } catch {
       return false;
     }
@@ -151,14 +204,16 @@ class AuthService {
           headers: { Authorization: `Bearer ${this.token}` },
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          this.setSession(this.token, data.user);
-          return data.user;
-        } else {
-          // Token invalid or expired
-          this.clearSession();
-          return null;
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await res.json().catch(() => null);
+          if (res.ok && data?.user) {
+            this.setSession(this.token, data.user);
+            return data.user;
+          } else if (res.status === 401 || res.status === 403) {
+            this.clearSession();
+            return null;
+          }
         }
       }
     } catch (e) {
@@ -183,7 +238,7 @@ class AuthService {
       throw new Error('Vui lòng nhập đầy đủ tên đăng nhập/email và mật khẩu.');
     }
 
-    // 1. Try backend login API
+    // 1. Try backend login API if online
     try {
       const isOnline = await this.checkOnline();
       if (isOnline) {
@@ -193,19 +248,27 @@ class AuthService {
           body: JSON.stringify({ username: trimmedId, password }),
         });
 
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'Tên đăng nhập hoặc mật khẩu không chính xác.');
-        }
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await res.json().catch(() => null);
+          if (data) {
+            if (!res.ok) {
+              const apiError: any = new Error(data.error || 'Tên đăng nhập hoặc mật khẩu không chính xác.');
+              apiError.isBackendApiError = true;
+              throw apiError;
+            }
 
-        const token = data.token || `sess_${Date.now()}`;
-        this.setSession(token, data.user);
-        return data.user;
+            const token = data.token || `sess_${Date.now()}`;
+            this.setSession(token, data.user);
+            return data.user;
+          }
+        }
       }
     } catch (err: any) {
-      if (err.message && !err.message.includes('fetch') && !err.message.includes('NetworkError')) {
+      if (err.isBackendApiError) {
         throw err;
       }
+      console.warn('Backend login unavailable or non-JSON, falling back to local authentication:', err);
     }
 
     // 2. Offline / Static fallback authentication
@@ -213,11 +276,7 @@ class AuthService {
     const localUsers = this.getLocalRegisteredUsers();
     const allUsers: SeedAccount[] = [...SEED_ACCOUNTS, ...localUsers];
 
-    const matched = allUsers.find(
-      (u) =>
-        u.username.toLowerCase() === trimmedId.toLowerCase() ||
-        (u.email && u.email.toLowerCase() === trimmedId.toLowerCase())
-    );
+    const matched = allUsers.find((u) => matchesIdentifier(u, trimmedId));
 
     if (!matched) {
       throw new Error('Tài khoản không tồn tại trong hệ thống.');
@@ -276,19 +335,27 @@ class AuthService {
           }),
         });
 
-        const resData = await res.json();
-        if (!res.ok) {
-          throw new Error(resData.error || 'Đăng ký tài khoản thất bại.');
-        }
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const resData = await res.json().catch(() => null);
+          if (resData) {
+            if (!res.ok) {
+              const apiError: any = new Error(resData.error || 'Đăng ký tài khoản thất bại.');
+              apiError.isBackendApiError = true;
+              throw apiError;
+            }
 
-        const token = resData.token || `sess_${Date.now()}`;
-        this.setSession(token, resData.user);
-        return resData.user;
+            const token = resData.token || `sess_${Date.now()}`;
+            this.setSession(token, resData.user);
+            return resData.user;
+          }
+        }
       }
     } catch (err: any) {
-      if (err.message && !err.message.includes('fetch') && !err.message.includes('NetworkError')) {
+      if (err.isBackendApiError) {
         throw err;
       }
+      console.warn('Backend register unavailable, falling back to local storage:', err);
     }
 
     // 2. Offline / Static fallback registration
@@ -353,20 +420,29 @@ class AuthService {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ identifier: trimmedId }),
         });
-        const data = await res.json();
-        if (res.ok) {
-          return data;
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await res.json().catch(() => null);
+          if (data) {
+            if (!res.ok) {
+              const apiError: any = new Error(data.error || 'Không tìm thấy tài khoản.');
+              apiError.isBackendApiError = true;
+              throw apiError;
+            }
+            return data;
+          }
         }
       }
-    } catch {}
+    } catch (err: any) {
+      if (err.isBackendApiError) {
+        throw err;
+      }
+      console.warn('Backend forgot-password unavailable, falling back to local lookup:', err);
+    }
 
     // Fallback
     const allUsers = [...SEED_ACCOUNTS, ...this.getLocalRegisteredUsers()];
-    const user = allUsers.find(
-      (u) =>
-        u.username.toLowerCase() === trimmedId.toLowerCase() ||
-        (u.email && u.email.toLowerCase() === trimmedId.toLowerCase())
-    );
+    const user = allUsers.find((u) => matchesIdentifier(u, trimmedId));
 
     if (!user) {
       throw new Error('Không tìm thấy tài khoản với thông tin đã cung cấp.');
