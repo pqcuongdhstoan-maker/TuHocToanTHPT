@@ -41,6 +41,20 @@ export default function App() {
   const [isArenaModalOpen, setIsArenaModalOpen] = useState<boolean>(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('beedemy_sidebar_collapsed') === 'true';
+    }
+    return false;
+  });
+
+  const handleToggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('beedemy_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   // Cross-view context passing (e.g. ask AI about a specific question from exam view)
   const [aiInitialPrompt, setAiInitialPrompt] = useState<string | undefined>(undefined);
@@ -143,10 +157,16 @@ export default function App() {
         onOpenImportModal={() => setIsImportModalOpen(true)}
         isMobileOpen={isMobileOpen}
         onCloseMobile={() => setIsMobileOpen(false)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={handleToggleSidebarCollapse}
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:pl-72 min-w-0 transition-all">
+      <div
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
+          isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'
+        }`}
+      >
         {/* Sticky Top Navbar */}
         <Navbar
           onToggleMobile={() => setIsMobileOpen(!isMobileOpen)}
